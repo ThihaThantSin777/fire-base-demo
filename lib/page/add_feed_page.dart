@@ -31,6 +31,10 @@ class _AddFeedPageState extends State<AddFeedPage> {
     return ChangeNotifierProvider<AddFeedPageBloc>(
       create: (_) => AddFeedPageBloc(),
       child: Scaffold(
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {},
+          child: Icon(widget.feedID != -1 ? Icons.edit : Icons.upload),
+        ),
         appBar: AppBar(
           title: Text(widget.feedID != 1 ? "Add Feed" : "Edit Feed"),
         ),
