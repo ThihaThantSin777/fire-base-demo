@@ -14,7 +14,6 @@ class LoadingStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(loadingState);
     return switch (loadingState) {
       LoadingState.loading => loadingWidget ?? const LoadingWidget(),
       LoadingState.error => errorWidget,

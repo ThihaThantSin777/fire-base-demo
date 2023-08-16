@@ -25,4 +25,6 @@ class FeedDetailsPageBloc extends BaseBloc {
       notifyListeners();
     });
   }
+
+  Future deleteFeed(int id) => _feedModel.deleteFeed(id);
 }

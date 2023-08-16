@@ -26,12 +26,17 @@ class FeedDataAgentPOCImpl extends FeedDataAgent {
   }
 
   @override
-  void saveFeed(FeedVO feedVO) {
-    // TODO
+  Future saveFeed(FeedVO feedVO) {
+    throw UnimplementedError();
   }
 
   @override
-  void deleteFeed(int id) {
-    // TODO
+  Future deleteFeed(int id) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<FeedVO>?> getFeedListStream() {
+    throw UnimplementedError();
   }
 }
