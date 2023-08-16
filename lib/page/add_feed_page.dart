@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:fire_base/bloc/add_feed_page_bloc.dart';
 import 'package:fire_base/utils/enums.dart';
+import 'package:fire_base/utils/extensions.dart';
 import 'package:fire_base/utils/file_picker_utils.dart';
+import 'package:fire_base/widgets/dialog_widget.dart';
 import 'package:fire_base/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -31,10 +33,40 @@ class _AddFeedPageState extends State<AddFeedPage> {
     return ChangeNotifierProvider<AddFeedPageBloc>(
       create: (_) => AddFeedPageBloc(),
       child: Scaffold(
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          child: Icon(widget.feedID != -1 ? Icons.edit : Icons.upload),
-        ),
+        floatingActionButton: Builder(builder: (context) {
+          return FloatingActionButton(
+            onPressed: () {
+              final bloc = context.read<AddFeedPageBloc>();
+              showDialog(context: context, barrierDismissible: false, builder: (_) => const LoadingWidget());
+              bloc.uploadFileToFirebaseStorage().then((value) {
+                context.navigateBack();
+                showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => DialogWidget(
+                          content: 'Success',
+                          onTapOK: () {
+                            context.navigateBack();
+                            context.navigateBack();
+                          },
+                        ));
+              }).catchError((error) {
+                context.navigateBack();
+                showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => DialogWidget(
+                          content: error.toString(),
+                          isSuccessDialog: false,
+                          onTapOK: () {
+                            context.navigateBack();
+                          },
+                        ));
+              });
+            },
+            child: Icon(widget.feedID != -1 ? Icons.edit : Icons.upload),
+          );
+        }),
         appBar: AppBar(
           title: Text(widget.feedID != 1 ? "Add Feed" : "Edit Feed"),
         ),
