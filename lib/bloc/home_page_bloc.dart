@@ -10,16 +10,21 @@ class HomePageBloc extends BaseBloc {
   List<FeedVO>? get getFeedList => _feedList;
 
   final FeedModel _feedModel = FeedModel();
-
+  Future deleteFeed(int id) => _feedModel.deleteFeed(id);
   HomePageBloc() {
     setLoadingState = LoadingState.loading;
     notifyListeners();
-    _feedModel.getFeedList().then((value) {
-      setLoadingState = LoadingState.complete;
-      _feedList = value;
-      notifyListeners();
-    }).catchError((error) {
-      setLoadingState = LoadingState.error;
+    _feedModel.getFeedListStream().listen((event) {
+      if (event?.isEmpty ?? true) {
+        setLoadingState = LoadingState.error;
+        setErrorMessage = "There is no feed in database";
+        notifyListeners();
+      } else {
+        setLoadingState = LoadingState.complete;
+        _feedList = event;
+        notifyListeners();
+      }
+    }, onError: (error) {
       setErrorMessage = error.toString();
       notifyListeners();
     });

@@ -1,7 +1,5 @@
-import 'package:fire_base/bloc/add_feed_page_bloc.dart';
 import 'package:fire_base/data/vos/feed_vo.dart';
-import 'package:fire_base/page/feed_details_page.dart';
-import 'package:fire_base/utils/extensions.dart';
+import 'package:fire_base/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/enums.dart';
@@ -9,21 +7,39 @@ import '../utils/url_launcher_utils.dart';
 import 'cache_network_image_widget.dart';
 
 class FeedBodyWidget extends StatelessWidget {
-  const FeedBodyWidget({super.key, required this.feedVO});
+  const FeedBodyWidget({super.key, required this.feedVO, required this.onTapDelete, required this.onTapEdit, required this.onTapFeed});
 
   final FeedVO? feedVO;
-
+  final Function onTapEdit;
+  final Function onTapDelete;
+  final Function onTapFeed;
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onLongPress: () {
+        showModalBottomSheet(
+            context: context,
+            builder: (_) {
+              return EditDeleteModelSheetView(
+                onTapDelete: () {
+                  onTapDelete();
+                },
+                onTapEdit: () {
+                  onTapEdit();
+                },
+              );
+            });
+      },
       onTap: () {
-        context.navigateToNext(FeedDetailsPage(feedID: feedVO?.id ?? -1));
+        onTapFeed();
       },
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         elevation: 5,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height * 0.4,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -38,20 +54,67 @@ class FeedBodyWidget extends StatelessWidget {
                 height: 20,
               ),
               if (feedVO?.getFileType == FileType.photo) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: CacheNetworkImageWidget(
-                    imageURL: feedVO?.fileURL ?? '',
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: CacheNetworkImageWidget(
+                      width: MediaQuery.of(context).size.width,
+                      imageURL: feedVO?.fileURL ?? '',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 )
               ],
               if (feedVO?.getFileType == FileType.video) ...[
-                const SizedBox(),
+                Expanded(
+                  child: VideoPlayerWidget(
+                    filePath: feedVO?.fileURL ?? '',
+                    isFileIsNetwork: true,
+                  ),
+                )
               ],
-              if (feedVO?.getFileType == FileType.file) ...[_FeedFileView(fileURL: feedVO?.fileURL ?? '')]
+              if (feedVO?.getFileType == FileType.file) ...[Expanded(child: _FeedFileView(fileURL: feedVO?.fileURL ?? ''))]
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class EditDeleteModelSheetView extends StatelessWidget {
+  const EditDeleteModelSheetView({
+    super.key,
+    required this.onTapDelete,
+    required this.onTapEdit,
+  });
+  final Function onTapDelete;
+  final Function onTapEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(top: 10),
+      height: MediaQuery.of(context).size.height * 0.1,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: () {
+              onTapEdit();
+            },
+            child: const Text("Edit Feed"),
+          ),
+          const Divider(
+            thickness: 1,
+          ),
+          GestureDetector(
+            onTap: () {
+              onTapDelete();
+            },
+            child: const Text("Delete Feed"),
+          ),
+        ],
       ),
     );
   }

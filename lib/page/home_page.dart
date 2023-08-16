@@ -1,6 +1,7 @@
 import 'package:fire_base/bloc/home_page_bloc.dart';
 import 'package:fire_base/data/vos/feed_vo.dart';
 import 'package:fire_base/page/add_feed_page.dart';
+import 'package:fire_base/page/feed_details_page.dart';
 import 'package:fire_base/utils/enums.dart';
 import 'package:fire_base/utils/extensions.dart';
 import 'package:fire_base/widgets/feed_body_widget.dart';
@@ -52,10 +53,21 @@ class HomePageItemView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = context.read<HomePageBloc>();
     return Selector<HomePageBloc, List<FeedVO>?>(
         selector: (_, bloc) => bloc.getFeedList,
         builder: (_, feedList, __) => ListView.separated(
-            itemBuilder: (_, index) => FeedBodyWidget(feedVO: feedList?[index]),
+            itemBuilder: (_, index) => FeedBodyWidget(
+                  feedVO: feedList?[index],
+                  onTapDelete: () {
+                    context.navigateBack();
+                    bloc.deleteFeed(feedList?[index].id ?? -1);
+                  },
+                  onTapEdit: () {},
+                  onTapFeed: () {
+                    context.navigateToNext(FeedDetailsPage(feedID: feedList?[index].id ?? -1));
+                  },
+                ),
             separatorBuilder: (_, index) => const Divider(),
             itemCount: feedList?.length ?? 0));
   }

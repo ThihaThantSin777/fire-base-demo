@@ -1,19 +1,19 @@
 import 'dart:io';
 
 import 'package:fire_base/bloc/add_feed_page_bloc.dart';
+import 'package:fire_base/data/vos/feed_vo.dart';
 import 'package:fire_base/utils/enums.dart';
 import 'package:fire_base/utils/extensions.dart';
 import 'package:fire_base/utils/file_picker_utils.dart';
+import 'package:fire_base/widgets/cache_network_image_widget.dart';
 import 'package:fire_base/widgets/dialog_widget.dart';
 import 'package:fire_base/widgets/loading_widget.dart';
+import 'package:fire_base/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:video_player/video_player.dart';
 
 class AddFeedPage extends StatefulWidget {
-  const AddFeedPage({super.key, this.feedID = -1});
-
-  final int feedID;
+  const AddFeedPage({super.key});
 
   @override
   State<AddFeedPage> createState() => _AddFeedPageState();
@@ -38,7 +38,7 @@ class _AddFeedPageState extends State<AddFeedPage> {
             onPressed: () {
               final bloc = context.read<AddFeedPageBloc>();
               showDialog(context: context, barrierDismissible: false, builder: (_) => const LoadingWidget());
-              bloc.uploadFileToFirebaseStorage().then((value) {
+              bloc.saveFeed(_controller.text).then((value) {
                 context.navigateBack();
                 showDialog(
                     context: context,
@@ -64,11 +64,11 @@ class _AddFeedPageState extends State<AddFeedPage> {
                         ));
               });
             },
-            child: Icon(widget.feedID != -1 ? Icons.edit : Icons.upload),
+            child: const Icon(Icons.upload),
           );
         }),
         appBar: AppBar(
-          title: Text(widget.feedID != 1 ? "Add Feed" : "Edit Feed"),
+          title: const Text("Add Feed"),
         ),
         body: SingleChildScrollView(
           child: Column(
@@ -84,7 +84,10 @@ class _AddFeedPageState extends State<AddFeedPage> {
                 controller: _controller,
               )),
               Selector<AddFeedPageBloc, FileType>(
-                  selector: (_, bloc) => bloc.getFileType, builder: (_, fileType, __) => _FileTypeView(fileType: fileType)),
+                  selector: (_, bloc) => bloc.getFileType,
+                  builder: (_, fileType, __) => _FileTypeView(
+                        fileType: fileType,
+                      )),
             ],
           ),
         ),
@@ -108,23 +111,29 @@ class _FileTypeView extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 10),
               child: file != null && fileType == FileType.photo
                   ? _PhotoView(
-                      file: file,
+                      filePath: file.path,
                     )
                   : file != null && fileType == FileType.video
-                      ? _VideoPlayerView(
+                      ? VideoPlayerWidget(
                           filePath: file.path,
+                          onTapRemove: () {
+                            final bloc = context.read<AddFeedPageBloc>();
+                            bloc.setSelectFile = null;
+                          },
                         )
                       : file != null && fileType == FileType.file
-                          ? _FileView(file: file)
+                          ? _FileView(
+                              filePath: file.path.split('/').last,
+                            )
                           : const SizedBox(),
             ));
   }
 }
 
 class _FileView extends StatelessWidget {
-  const _FileView({required this.file});
+  const _FileView({required this.filePath});
 
-  final File file;
+  final String filePath;
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +154,7 @@ class _FileView extends StatelessWidget {
               const SizedBox(
                 height: 20,
               ),
-              Text(file.path.split('/').last)
+              Text(filePath)
             ],
           ),
         ),
@@ -167,98 +176,17 @@ class _FileView extends StatelessWidget {
   }
 }
 
-class _VideoPlayerView extends StatefulWidget {
-  const _VideoPlayerView({required this.filePath});
+class _PhotoView extends StatelessWidget {
+  const _PhotoView({required this.filePath});
 
   final String filePath;
-
-  @override
-  State<_VideoPlayerView> createState() => _VideoPlayerViewState();
-}
-
-class _VideoPlayerViewState extends State<_VideoPlayerView> {
-  late VideoPlayerController _controller;
-  bool _isPlay = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.file(File(widget.filePath), videoPlayerOptions: VideoPlayerOptions());
-    _controller.initialize().whenComplete(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        setState(() {});
-      }
-    });
-
-    _controller.addListener(() {
-      if (mounted) {
-        setState(() {
-          _isPlay = _controller.value.isPlaying;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bloc = context.read<AddFeedPageBloc>();
-    return _controller.value.isInitialized
-        ? Stack(
-            children: [
-              Positioned.fill(child: VideoPlayer(_controller)),
-              Align(
-                  alignment: Alignment.center,
-                  child: IconButton(
-                    onPressed: () {
-                      if (_isPlay) {
-                        _controller.pause();
-                      } else {
-                        _controller.play();
-                      }
-                    },
-                    icon: Icon(
-                      _isPlay ? Icons.pause : Icons.play_arrow,
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                  )),
-              Align(
-                alignment: Alignment.topRight,
-                child: GestureDetector(
-                  onTap: () {
-                    bloc.setSelectFile = null;
-                  },
-                  child: const Icon(
-                    Icons.delete,
-                    color: Colors.red,
-                    size: 28,
-                  ),
-                ),
-              )
-            ],
-          )
-        : const LoadingWidget();
-  }
-}
-
-class _PhotoView extends StatelessWidget {
-  const _PhotoView({required this.file});
-
-  final File file;
 
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<AddFeedPageBloc>();
     return Stack(
       children: [
-        Positioned.fill(child: Image.file(file)),
+        Positioned.fill(child: Image.file(File(filePath))),
         Align(
           alignment: Alignment.topRight,
           child: GestureDetector(
