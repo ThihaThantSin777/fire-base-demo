@@ -16,6 +16,7 @@ class BaseBloc extends ChangeNotifier {
 
   @override
   void notifyListeners() {
+    print('test');
     if (!_isDispose) {
       super.notifyListeners();
     }
